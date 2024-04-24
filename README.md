@@ -118,6 +118,10 @@
 
 Готовое приложение для ПК на Windows находится в папке **Libre Hardware Monitor**. 
 
+
+https://github.com/profi-max/WT32-SC01-PLUS_multiinformer/assets/157157181/f272c821-aee3-46e1-b128-9fca44de75e6
+
+
 В приложении нужно:
 + Menu -> Options -> Run On Windows Startup   для автоматического запуска приложения при старте Windows.
 + Menu -> Options -> Remote Web Server -> Run    запуск сервера
