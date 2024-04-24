@@ -27,6 +27,7 @@ https://github.com/profi-max/WT32-SC01-PLUS_multiinformer/assets/157157181/09d66
 
 ## Можете сразу использовать готовую прошивку
 Используйте файл Firmware.bin из папки **Firmware**. Загрузите программу Flash Download Tools  с официального ресурса: https://www.espressif.com/en/support/download/other-tools
+
 Посмотрите видеоинструкцию в папке **Firmware**. Подключите USB кабель к отладочной плате, запустите приложение, выберите COM-порт и bin-файл. Когда загрузка завершится нажмите кнопку "RST" (Reset), чтобы перезапустить отладочную плату.
 
 ## Компиляция проекта
