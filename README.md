@@ -65,6 +65,7 @@
 
 ## Веб-файловый менеджер
 ![Файловый менеджер](/Pictures/web_file_mgr.png "Файловый менеджер")
+
 Через веб-файловый менеджер вы имеете доступ к внутренней файловой системе отладочной платы (LittleFS).
 Файловый менеджер открывавется в браузере по адресу http://xxx.xxx.xxx.xxx:8080/, где ххх - локальный IP адрес отладочной платы. Вы можете редактировать, добавлять и удалять файлы конфигурации.
 + File Drop Zone - зона куда перетаскивать файлы
@@ -113,7 +114,14 @@
 - Скорость исходящего потока
 - Скорость входящего потока
 
-Работа данного экрана требует предварительной настройки Libre Hardware Monitor и модификации исходников программы в файле hardwaremonitor.ino. Полная инструкция по настройке приведена в [этой статье](https://projectalt.ru/publ/arduino_i_esp/sozdanie_wifi_monitora_parametrov_pk_na_platformakh_esp32_ili_esp8266/3-1-0-55 "этой статье").
+Для работа данного экрана нужно чтобы на компьютере была запущена программа Libre Hardware Monitor. https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+
+Готовое приложение для ПК на Windows находится в папке **Libre Hardware Monitor**. 
+
+В приложении нужно:
++ Menu -> Options -> Run On Windows Startup   для автоматического запуска приложения при старте Windows.
++ Menu -> Options -> Remote Web Server -> Run    запуск сервера
++ Menu -> Options -> Remote Web Server -> Port посмотреть IP адрес и порт. Добавить в настройки информера.
 
 ### Экран погоды
 ![Экран погоды](/Pictures/weather.png)
