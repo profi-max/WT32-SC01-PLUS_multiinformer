@@ -29,8 +29,7 @@
 
 ### Используемые библиотеки и ядра
 Все необходимые библиотеки уже добавлены в файл platformio.ini и загрузятся автоматически при компиляции проекта.
-- [Ядро ESP32 2.0.9](https://github.com/espressif/arduino-esp32 "Ядро ESP32 2.0.9")
-- [lvgl 8.4.0](https://github.com/lvgl/lvgl/tree/release/v8.4 "lvgl 8.4.0")
+- [lvgl 8.4.0](https://github.com/lvgl/lvgl/releases/tag/v8.4.0 "lvgl 8.4.0")
 - [GyverNTP 1.3.1](https://github.com/GyverLibs/GyverNTP "GyverNTP 1.3.1")
 - [GyverTimer 3.2](https://github.com/GyverLibs/GyverTimer "GyverTimer 3.2")
 - [ArduinoJson 6.21.2](https://github.com/bblanchon/ArduinoJson "ArduinoJson 6.21.2")
