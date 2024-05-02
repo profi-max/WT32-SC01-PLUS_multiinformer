@@ -48,7 +48,7 @@ https://github.com/profi-max/WT32-SC01-PLUS_multiinformer/assets/157157181/09d66
 - [Adafruit BME680 Library 2.0.2](https://github.com/adafruit/Adafruit_BME680 "Adafruit BME680 Library 2.0.2")
 - [ESP32Audio I2S](https://github.com/esphome/ESP32-audioI2S "ESP32Audio I2S")
 - [ESPxWebFlMgr](https://github.com/holgerlembke/ESPxWebFlMgr/tree/master "ESPxWebFlMgr")
-- Файлы библиотеки Adafruit BME280 модифицырованы для работы с датчиками BME280 и BMP280. Модифицированные файлы находятся в папках src и lib.
+- Файлы библиотеки Adafruit BME280 модифицированы для работы с датчиками BME280 и BMP280. Модифицированные файлы находятся в папках src и lib.
 
 
 В проекте используется форк библиотеки ESP32Audio I2S за авторством esphome. Стандартная версия без psram работает не очень плавно. Звук часто заикается. Так что используйте версию по ссылке выше. Также библиотека при остановке воспроизведения не совсем корректно освобождала ресурсы. Из=за чего возникали проблемы при работе устройства. Мною эта билиотека так же была немного модифицирована. В папке library_replacement_files/ESP32-audioI2S-dev содержатся модифицированные файлы библиотеки. Замените ими оригинальные.
