@@ -37,7 +37,9 @@ https://github.com/profi-max
   #include <ESPxWebFlMgr.h> //файловый менеджер
 
 
-  #define USE_BME280
+  //#define USE_BME280
+
+
   #define BME_ADDR 0x76  // адрес зависит от пина SDO (0: 0x76)(1: 0x77)
 
 #ifdef USE_BME280

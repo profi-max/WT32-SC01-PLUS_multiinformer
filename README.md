@@ -22,8 +22,13 @@ https://github.com/profi-max/WT32-SC01-PLUS_multiinformer/assets/157157181/09d66
 - Ультратонкий [динамик 4 Ом 3 Вт](https://aliexpress.ru/item/4000167008546.html "динамик 4 Ом 3 Вт")
 
 Опционально (по желанию):
-- Модуль [BME680](https://aliexpress.ru/item/4001113450307.html "BME680")
 - [Фоторезистор](https://aliexpress.ru/item/1005005692182923.html "Фоторезистор")
+- Модуль [BME680](https://aliexpress.ru/item/4001113450307.html "BME680")
+- или BME280 (без измерения качества воздуха) или BMP280 (без измерения качества воздуха и влажности). Для работы с датчиками BME280/BMP280 раскоментируйте строку в файле main.h:
+```
+//#define USE_BME280
+
+```
 
 ## Можете сразу использовать готовую прошивку
 Используйте файл Firmware.bin из папки **Firmware**. Загрузите программу Flash Download Tools  с официального ресурса: https://www.espressif.com/en/support/download/other-tools
@@ -43,6 +48,7 @@ https://github.com/profi-max/WT32-SC01-PLUS_multiinformer/assets/157157181/09d66
 - [Adafruit BME680 Library 2.0.2](https://github.com/adafruit/Adafruit_BME680 "Adafruit BME680 Library 2.0.2")
 - [ESP32Audio I2S](https://github.com/esphome/ESP32-audioI2S "ESP32Audio I2S")
 - [ESPxWebFlMgr](https://github.com/holgerlembke/ESPxWebFlMgr/tree/master "ESPxWebFlMgr")
+- Файлы библиотеки Adafruit BME280 модифицырованы для работы с датчиками BME280 и BMP280. Модифицированные файлы находятся в папках src и lib.
 
 
 В проекте используется форк библиотеки ESP32Audio I2S за авторством esphome. Стандартная версия без psram работает не очень плавно. Звук часто заикается. Так что используйте версию по ссылке выше. Также библиотека при остановке воспроизведения не совсем корректно освобождала ресурсы. Из=за чего возникали проблемы при работе устройства. Мною эта билиотека так же была немного модифицирована. В папке library_replacement_files/ESP32-audioI2S-dev содержатся модифицированные файлы библиотеки. Замените ими оригинальные.
