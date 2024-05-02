@@ -165,10 +165,15 @@
   SPIClass SDSPI(HSPI);
   Audio audio;
 //Инициализация BME датчика
+#ifdef USE_BME280
+  Adafruit_BME280 bme;
+#else
   Adafruit_BME680 bme;
+#endif
+bool bme_found = false;
 //Инициализации библиотек и переферии
 //---------------------------- WT32-SC01_PLUS TFT & TOUCH setup --------------------------
-#define SCR 8
+#define SCR 32
 class LGFX : public lgfx::LGFX_Device
 {
   lgfx::Panel_ST7796 _panel_instance;
@@ -266,6 +271,7 @@ public:
 };
 
  LGFX tft; // Create an instance of the prepared class.
+//-------------------------------------------------------------------------------------------
    
   //NTP инициализация
   GyverNTP ntp(3); //часовой пояс GMT+3
@@ -288,14 +294,10 @@ static const char * my_year_list = {
     "2000\n1999\n1998\n1997\n1996\n1995\n1994\n1993\n1992\n1991\n1990\n1989\n1988\n1987\n1986\n1985\n1984\n1983\n1982\n1981\n"
 };
 
-//------------------------------  function declarations -------------------------------------
-void set_calendars_date();
-
-
-
 //-------------------------------------------------------------------------------------------
-
+//=================================================================================================
 //Служебные функции
+//=================================================================================================
 //Здесь напишем функцию для вывода содержимого буфера на экран
   void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p )
   {
@@ -309,28 +311,21 @@ void set_calendars_date();
   lv_disp_flush_ready(disp); /* tell lvgl that flushing is done */
  }
 
+//=================================================================================================
 // Вычисление координат касания
   void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
   {
   uint16_t touchX, touchY;
-
-  bool touched = tft.getTouch(&touchX, &touchY);
-
-  if (!touched)
-  {
-    data->state = LV_INDEV_STATE_REL;
-  }
-  else
+  if (tft.getTouch(&touchX, &touchY))
   {
     data->state = LV_INDEV_STATE_PR;
-
-    /*Set the coordinates*/
     data->point.x = touchX;
     data->point.y = touchY;
   }
-
+  else  data->state = LV_INDEV_STATE_REL;
   }
 
+//=================================================================================================
 //Функция обработчик изменения активной вкладки
   static void change_tab_event(lv_event_t * e)
   {
@@ -362,6 +357,7 @@ void set_calendars_date();
           }  
     }
   }
+//=================================================================================================
 //Функция вызываемая при изменении активной вкладки настроек
   static void change_settings_tab_event(lv_event_t * e)
   {
@@ -394,6 +390,7 @@ void set_calendars_date();
           }
     }
   }
+//=================================================================================================
 //Универсальная функция обработки ввода текста в text_area
   static void ta_event_cb(lv_event_t * e)
   {
@@ -423,30 +420,35 @@ void set_calendars_date();
         lv_indev_reset(NULL, ta);   /*To forget the last clicked object to make it focusable again*/
     }
   }
+//=================================================================================================
 //Обработка введенного текста в поле API погоды
   static void wt_ta_event_cb(lv_event_t * e)
   {
   api_key=lv_textarea_get_text(wt_ta);
   saveconf=true;
   }  
+//=================================================================================================
 //Обработка введенного текста в поле города для погоды
   static void wtl_ta_event_cb(lv_event_t * e)
   {
   qLocation=lv_textarea_get_text(wtl_ta);
   saveconf=true;
   }
+//=================================================================================================
 //Обработка введенного текста в поле адреса сервера пк информера
   static void pc_ta_event_cb(lv_event_t * e)
   {
   pc_server_path=lv_textarea_get_text(pc_ta);
   saveconf=true;
   }
+//=================================================================================================
 //Обработка введенного текста в поле ssid wifi
   static void wifissid_ta_event_cb(lv_event_t * e)
   {
   SSID=lv_textarea_get_text(wifissid_ta);
   saveconf=true;
   } 
+//=================================================================================================
 //Обработка введенного текста в поле pass wifi
   static void wifipass_ta_event_cb(lv_event_t * e)
   {
@@ -455,6 +457,7 @@ void set_calendars_date();
   }
 
 
+//=================================================================================================
 //Изменение параметра плейлиста
   static void radio_ta_event_cb(lv_event_t * e)
   {
@@ -475,6 +478,7 @@ void set_calendars_date();
   
   } 
 
+//=================================================================================================
 //Обработка изменения значения слайдера яркости экрана
   static void slider_brightness_event_cb(lv_event_t * e)
   {
@@ -486,6 +490,7 @@ void set_calendars_date();
     saveconf=true;
   }
 
+//=================================================================================================
 //Обработка изменения значения установки времени работы подсветки
   static void slider_daytime_event(lv_event_t * e)
   {
@@ -497,6 +502,7 @@ void set_calendars_date();
     saveconf=true;
   }  
 
+//=================================================================================================
 //Обработка изменения значения слайдера часового пояса
   static void slider_gmt_event_cb(lv_event_t * e)
   {
@@ -508,6 +514,7 @@ void set_calendars_date();
     saveconf=true;
   }
 
+//=================================================================================================
 //Обработка изменения значения слайдера интервала обновления пк информера
   static void slider_pcint_event_cb(lv_event_t * e)
   {
@@ -518,6 +525,7 @@ void set_calendars_date();
     refpc.setInterval(refpcinterval);
     saveconf=true;
   }
+//=================================================================================================
 //Обработка изменения значения слайдера интервала обновления датчика bme
   static void slider_bmeint_event_cb(lv_event_t * e)
   {
@@ -527,6 +535,7 @@ void set_calendars_date();
     refsensorinterval=(int)lv_slider_get_value(slider)*1000;
     saveconf=true;
   }
+//=================================================================================================
 //Обработка изменения значения слайдера интервала обновления информера погоды
   static void slider_weatherint_event_cb(lv_event_t * e)
   {
@@ -539,6 +548,7 @@ void set_calendars_date();
   }
 
 
+//=================================================================================================
 //Выключатель BME 
   static void bme_switch_event(lv_event_t * e)
   {
@@ -577,6 +587,7 @@ void set_calendars_date();
   }
 
 
+//=================================================================================================
 //включение выключение автояркости
   static void autobright_switch_event(lv_event_t * e)
   {
@@ -592,6 +603,7 @@ void set_calendars_date();
     
   saveconf=true;  
   }
+//=================================================================================================
 //включение и выключение led индикатора
   static void rgb_indic_switch_event(lv_event_t * e)
   {
@@ -608,6 +620,7 @@ void set_calendars_date();
   saveconf=true;  
   }
 
+//=================================================================================================
   //Перключение темы
   static void darktheme_switch_event(lv_event_t * e)
   {
@@ -624,6 +637,7 @@ void set_calendars_date();
   saveconf=true;  
   }    
 
+//=================================================================================================
 //Изменение цветого оформления таблицы вылют
   static void draw_table_part_event_cb(lv_event_t * e)
   {
@@ -652,6 +666,7 @@ void set_calendars_date();
         }
     
   }
+//=================================================================================================
 /*функция обработчик касания точек на графике
   static void show_cash_value_cb(lv_event_t * e)
   {
@@ -699,28 +714,35 @@ void set_calendars_date();
         lv_obj_invalidate(chart);
     }
 }*/
+//=================================================================================================
 //Функции установки значений параметров пк для работы анимаций
+//=================================================================================================
 //загрузка проца
   static void set_cpu_value(void * indic, int32_t v)
   {
     lv_meter_set_indicator_end_value(cpumeter, (lv_meter_indicator_t *)indic, v);
   }
+//=================================================================================================
 //загрузка видюхи
   static void set_gpu_value(void * indic, int32_t v)
   {
     lv_meter_set_indicator_end_value(gpumeter, (lv_meter_indicator_t *)indic, v);
   }
+//=================================================================================================
 //использование озу
   static void set_cpuram(void * bar, int32_t ram)
   {
     lv_bar_set_value(rambar, ram, LV_ANIM_ON);
   }
+//=================================================================================================
 //использование видеопамяти
   static void set_gpuram(void * bar, int32_t ram)
   {
     lv_bar_set_value(gpurambar, ram, LV_ANIM_ON);
   }
+//=================================================================================================
 //Управление радио
+//=================================================================================================
 //Громкость вверх
   void radio_volume_up(lv_event_t * e) //громкость+
   {
@@ -734,6 +756,7 @@ void set_calendars_date();
         }
     
   }
+//=================================================================================================
 //Громкость вниз
   void radio_volume_down(lv_event_t * e)//громкость-
   {
@@ -744,6 +767,7 @@ void set_calendars_date();
           audio.setVolume(vol);
         }  
   }
+//=================================================================================================
 //Изменение громкости слайдером
   static void radio_volumembar_event_cb(lv_event_t * e)
   {
@@ -751,6 +775,7 @@ void set_calendars_date();
     vol=lv_slider_get_value(slider);
     audio.setVolume(vol);
   }
+//=================================================================================================
 //Канал вперед
   void radio_chanel_up(lv_event_t * e) //громкость+
   {
@@ -768,6 +793,7 @@ void set_calendars_date();
           refvisualiser.setInterval(50);
           }
   }
+//=================================================================================================
 //Канал назад
   void radio_chanel_down(lv_event_t * e)//громкость-
   {
@@ -785,6 +811,7 @@ void set_calendars_date();
           refvisualiser.setInterval(50);
           }
   }
+//=================================================================================================
 //запуск воспроизведения
   void radio_play_btn_press(lv_event_t * e)//громкость-
   {
@@ -809,6 +836,7 @@ void set_calendars_date();
         }
         rp=!rp;
   }
+//=================================================================================================
 //Закрытия окна плейлиста
   static void playlistwin_close_event( lv_event_t * e)
   {
@@ -818,11 +846,13 @@ void set_calendars_date();
       lv_obj_add_flag(playlistwin, LV_OBJ_FLAG_HIDDEN);
     }
   }
+//=================================================================================================
 //Включение режима редактирования плейлиста
   static void playlistwin_edit_event( lv_event_t * e)
   {
   playlist_edit=!playlist_edit;
   }
+//=================================================================================================
 //Открытие плейлиста
   void radio_playlist_edit(lv_event_t * e) //Кнопка нажатия 
   {
@@ -854,6 +884,7 @@ void set_calendars_date();
           refresh_playlist=false;
         }
   }
+//=================================================================================================
 //Обработка нажатия на таблицу плейлиста
   void playlist_table_press_event_cb(lv_event_t * e)//громкость-
   {
@@ -898,12 +929,14 @@ void set_calendars_date();
     }
     
   } 
+//=================================================================================================
 //Перезагрузка ESP32
   void esp_restart_event(lv_event_t * e)
   {
     lv_obj_t * obj = lv_event_get_current_target(e);
     if (lv_msgbox_get_active_btn(obj)==0) ESP.restart();
   }    
+//=================================================================================================
 //Сохранение плейлиста на sd карту
   void sd_settings_playlist_save_event(lv_event_t * e)
     {
@@ -916,6 +949,7 @@ void set_calendars_date();
         SD.end();
       }
     }
+//=================================================================================================
 //Загрузка плейлиста с sd карты
   void sd_settings_playlist_load_event(lv_event_t * e)
     {
@@ -929,6 +963,7 @@ void set_calendars_date();
         SD.end();  
       }
     }
+//=================================================================================================
 //Кнопка сохранения настроек на Sd карту
   void sd_settings_save_event(lv_event_t * e)
     {
@@ -941,6 +976,7 @@ void set_calendars_date();
         SD.end();
       }
     }
+//=================================================================================================
 //Кнопка загрузки настроека с sd карты
      void sd_settings_load_event(lv_event_t * e)
     {
@@ -957,6 +993,7 @@ void set_calendars_date();
 
 
 
+//=================================================================================================
 //инициализация LVGL и создание всех объектов
 void lvlg_create()
 {
@@ -1047,6 +1084,7 @@ void lvlg_create()
   lv_obj_align(displayclock, LV_ALIGN_TOP_LEFT, 210, 35); //положение на экране
   lv_obj_set_size(displayclock,LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   lv_obj_set_style_text_font(displayclock, &ui_font_digital, 0);
+  lv_label_set_text(displayclock, "00:00:00");
   //Далее идут данные с датчика BME280
   //Температура в комнате
    ui_weatherimage_main = lv_img_create(tab1);
@@ -1834,11 +1872,13 @@ Serial.println("3 screen");
   
 }
 
+//=================================================================================================
 //События WiFi
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
   Serial.println("Connected to AP successfully!");
 }
 
+//=================================================================================================
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info){
   Serial.println("WiFi connected");
   IPAddress ip = WiFi.localIP();
@@ -1851,6 +1891,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info){
   Serial.println(ip);
 }
 
+//=================================================================================================
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
   Serial.println("Disconnected from WiFi access point");
   Serial.print("WiFi lost connection. Reason: ");
@@ -1859,199 +1900,7 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
   WiFi.begin(SSID, PASS);
 }
 
-
-void setup()
-{ 
-  Serial.begin( 115200 ); //открытие серийного порта
-  psramInit();
-  Serial.println((String)"Memory available in PSRAM : " +ESP.getFreePsram());
-  
-  //инициализация дисплея в библиотеке TFT_ESPi и изменение его ориентации на альбомную
-  tft.init(); // Initialize LovyanGFX
-  tft.initDMA(); // Yes, yes. ESP32-S3 has 8/16-bit parallel LCD intrface with DMA
-  tft.startWrite();
-  tft.setRotation(1);
-  tft.setBrightness(0);
-
-  lv_init();//инициализация LVGL
-
-  //Инициализация файловой системы
-  if(!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED))
-  {
-    Serial.println("LittleFS Mount Failed");
-    Serial.println("Formatting LittleFS...");
-    bool formatted = LittleFS.format();
-    if(formatted){
-      Serial.println("\n\nSuccess formatting");
-    }else{
-      Serial.println("\n\nError formatting");
-    }
-    return;
-  }
-  else 
-  {
-    Serial.println("LittleFS ready!");
-    Serial.println("Reading config file...");
-    loadConfiguration(filename);
-    loadRadioConf("/radioconf.txt");
-    listDir(LittleFS, "/", 0);
-    Serial.println("Loading playlist info...");
-    un=playlistnumtrack(LittleFS,"/playlist.txt");
-    if (un>0) 
-    {
-        Serial.printf("Found %d stations \n",un);
-        url=playlistread(LittleFS,"/playlist.txt",sn);
-        Serial.printf("Current track: %s \n",url);
-    }
-    else
-    {
-          Serial.println("Stations not found");
-        un=1;
-        sn=1;
-        url="http://vladfm.ru:8000/vfm*Владивосток FM";
-        Serial.printf("Playing default station: %s \n",url);
-    }
-  } 
-
-    // Инициализация SD карты
-  pinMode(SD_CS, OUTPUT);
-  digitalWrite(SD_CS, HIGH);
-  //  SDSPI.begin(18, 19, 23); // 
-  SDSPI.begin(SD_SCK, SD_MISO, SD_MOSI);
-  SDSPI.setFrequency(1000000);
-  if(!SD.begin(SD_CS,SDSPI))
-  {
-    Serial.println("Card Mount Failed");
-  }
-  else
-  {
-    uint8_t cardType = SD.cardType();
-
-    if(cardType == CARD_NONE){
-      Serial.println("No SD card attached");
-      return;
-    }
-
-    Serial.print("SD Card Type: ");
-    if(cardType == CARD_MMC){
-      Serial.println("MMC");
-    } else if(cardType == CARD_SD){
-      Serial.println("SDSC");
-    } else if(cardType == CARD_SDHC){
-      Serial.println("SDHC");
-    } else {
-      Serial.println("UNKNOWN");
-    }
-
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
-
-
-    listDir(SD, "/", 0);
-    if (SD.exists("/playlist.txt")) 
-    {
-      sdLoadConf(SD, "/playlist.txt", "/playlist.txt");
-      SD.remove("/playlist.txt");
-      listDir(LittleFS, "/", 0);
-    }
-    SD.end();
-  }        
-      
-
-  //выводим интерфейс LVGL на экран        
-  Serial.println("lvgl start");
-  lvlg_create();
-  Serial.println("wifi start");
-  //подключение к WiFi
-  WiFi.disconnect(true);
-  delay(1000);
-
-  WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
-  WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
-  WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-  uint8_t tries = 11;
-  Serial.println();
-  Serial.printf("Connecting to %s ", SSID);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASS);
-  while (--tries && WiFi.status() != WL_CONNECTED) 
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    //Запускаем Web интерфейс и файловый менеджер
-    setupWebserver();
-    filemgr.begin();
-    IPAddress ip = WiFi.localIP();
-    Serial.printf("Open Filemanager with http://%s:%d/\n", ip.toString(), filemanagerport);
-    Serial.printf("Webserver is at http://%s/\n", ip.toString());
-
-    Serial.println("ntp start");
-    //запуск сервиса синхронизации времени
-    uint8_t numtries=10;
-    bool ntpstart=false;
-    while (numtries>0 && ntpstart==false)
-    {
-      ntp.setGMT(gmt);
-      ntpstart=ntp.begin();
-      Serial.println(ntp.status());
-      numtries--;
-    }
-    //ntp.setHost(ntpserver);
-
-    Serial.println("calendar start");
-    //Устанавливаем календарям актуальные данные
-    set_calendars_date();
-    Serial.println("get weather...");
-    getweather();
-    Serial.println(api_key);
-  }
-
-  Serial.println("timers start");
-  //Устанавливаем интервалы таймеров
-  reftime.setInterval(1000);//обновление времени на экране 1000 мс или 1 секунда
-  refpc.setInterval(refpcinterval); //Обновление парметров ПК 3 секунды
-  //refyandex.setInterval(refyandexinterval);//получение данных о доходе с рекламы 10 минут
-  reflvgl.setInterval(50);//обновление экрана LVGL 50 мс
-  refbright.setInterval(1000);//обновление показаний фоторезистора
-  refweather.setInterval(refweatherinterval);//Погода 5 минут
-  refsensor.setInterval(refsensorinterval);//обновление показаний сенсора
-  Serial.println("backlight start");
-  //Настройка подсветки экрана
-  tft.setBrightness(bright_level);
-  Serial.println("rgb start");
-
-//датчик температуры
-  if  (usesensor)
-  {
-    Serial.println("i2c start");
-    Wire.begin(21,22);
-    bool status = bme.begin(0x77, &Wire);  
-    if (!status) {
-      Serial.println("Could not find a valid BME280_2 sensor, check wiring!");
-      while (1);
-    }
-    // Set up oversampling and filter initialization
-    bme.setTemperatureOversampling(BME680_OS_8X);
-    bme.setHumidityOversampling(BME680_OS_2X);
-    bme.setPressureOversampling(BME680_OS_4X);
-    bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
-    bme.setGasHeater(320, 150); // 320*C for 150 ms
-  }
-  Serial.println("photo start");  
-  // настройка фоторезистора
-  pinMode(PHOTO_PIN, ANALOG);
-  //Настройка параметров аудио
-  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-  audio.setVolume(vol);
-  Serial.println("setup  audio done"); 
-  lv_theme_default_init(NULL, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_CYAN), darktheme, &fira);   
-}
-
-
+//=================================================================================================
 //Установка актуальной даты на календаре
   void set_calendars_date()
   {
@@ -2450,86 +2299,315 @@ void setup()
   
 }
 
+//=================================================================================================
+//=================================================================================================
 
+void setup()
+{ 
+  Serial.begin( 115200 ); //открытие серийного порта
+  psramInit();
+  Serial.println((String)"Memory available in PSRAM : " +ESP.getFreePsram());
+  
+  //инициализация дисплея в библиотеке TFT_ESPi и изменение его ориентации на альбомную
+  tft.init(); // Initialize LovyanGFX
+  tft.initDMA(); // Yes, yes. ESP32-S3 has 8/16-bit parallel LCD intrface with DMA
+  tft.startWrite();
+  tft.setRotation(1);
+  tft.setBrightness(0);
+
+  lv_init();//инициализация LVGL
+  //выводим интерфейс LVGL на экран        
+  Serial.println("lvgl start");
+  lvlg_create();
+  lv_timer_handler(); // Прорисовываем экран один раз
+  tft.setBrightness(150);
+  
+  //Инициализация файловой системы
+  if(!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED))
+  {
+    Serial.println("LittleFS Mount Failed");
+    Serial.println("Formatting LittleFS...");
+    bool formatted = LittleFS.format();
+    if(formatted){
+      Serial.println("\n\nSuccess formatting");
+    }else{
+      Serial.println("\n\nError formatting");
+    }
+    return;
+  }
+  else 
+  {
+    Serial.println("LittleFS ready!");
+    Serial.println("Reading config file...");
+    loadConfiguration(filename);
+    loadRadioConf("/radioconf.txt");
+    listDir(LittleFS, "/", 0);
+    Serial.println("Loading playlist info...");
+    un=playlistnumtrack(LittleFS,"/playlist.txt");
+    if (un>0) 
+    {
+        Serial.printf("Found %d stations \n",un);
+        url=playlistread(LittleFS,"/playlist.txt",sn);
+        Serial.printf("Current track: %s \n",url);
+    }
+    else
+    {
+          Serial.println("Stations not found");
+        un=1;
+        sn=1;
+        url="http://vladfm.ru:8000/vfm*Владивосток FM";
+        Serial.printf("Playing default station: %s \n",url);
+    }
+  } 
+
+    // Инициализация SD карты
+  pinMode(SD_CS, OUTPUT);
+  digitalWrite(SD_CS, HIGH);
+  //  SDSPI.begin(18, 19, 23); // 
+  SDSPI.begin(SD_SCK, SD_MISO, SD_MOSI);
+  SDSPI.setFrequency(1000000);
+  if(!SD.begin(SD_CS,SDSPI))
+  {
+    Serial.println("Card Mount Failed");
+  }
+  else
+  {
+    uint8_t cardType = SD.cardType();
+
+    if(cardType == CARD_NONE){
+      Serial.println("No SD card attached");
+      return;
+    }
+
+    Serial.print("SD Card Type: ");
+    if(cardType == CARD_MMC){
+      Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+
+
+    listDir(SD, "/", 0);
+    if (SD.exists("/playlist.txt")) 
+    {
+      sdLoadConf(SD, "/playlist.txt", "/playlist.txt");
+      SD.remove("/playlist.txt");
+      listDir(LittleFS, "/", 0);
+    }
+    SD.end();
+  }        
+      
+
+  Serial.println("wifi start");
+  //подключение к WiFi
+  WiFi.disconnect(true);
+  delay(1000);
+
+  WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
+  WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
+  WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+  uint8_t tries = 11;
+  Serial.println();
+  Serial.printf("Connecting to %s ", SSID);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(SSID, PASS);
+  while (--tries && WiFi.status() != WL_CONNECTED) 
+  {
+    Serial.print(".");
+    delay(500);
+  }
+  
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    //Запускаем Web интерфейс и файловый менеджер
+    setupWebserver();
+    filemgr.begin();
+    IPAddress ip = WiFi.localIP();
+    Serial.printf("Open Filemanager with http://%s:%d/\n", ip.toString(), filemanagerport);
+    Serial.printf("Webserver is at http://%s/\n", ip.toString());
+
+    Serial.println("ntp start");
+    //запуск сервиса синхронизации времени
+    uint8_t numtries=10;
+    bool ntpstart=false;
+    while (numtries>0 && ntpstart==false)
+    {
+      ntp.setGMT(gmt);
+      ntpstart=ntp.begin();
+      Serial.println(ntp.status());
+      numtries--;
+    }
+    //ntp.setHost(ntpserver);
+
+    Serial.println("calendar start");
+    //Устанавливаем календарям актуальные данные
+    set_calendars_date();
+    Serial.println("get weather...");
+    getweather();
+    Serial.println(api_key);
+  }
+
+  Serial.println("timers start");
+  //Устанавливаем интервалы таймеров
+  reftime.setInterval(1000);//обновление времени на экране 1000 мс или 1 секунда
+  refpc.setInterval(refpcinterval); //Обновление парметров ПК 3 секунды
+  //refyandex.setInterval(refyandexinterval);//получение данных о доходе с рекламы 10 минут
+  reflvgl.setInterval(50);//обновление экрана LVGL 50 мс
+  refbright.setInterval(1000);//обновление показаний фоторезистора
+  refweather.setInterval(refweatherinterval);//Погода 5 минут
+  refsensor.setInterval(refsensorinterval);//обновление показаний сенсора
+  Serial.println("backlight start");
+  //Настройка подсветки экрана
+  tft.setBrightness(bright_level);
+  Serial.println("rgb start");
+
+//датчик температуры
+  if  (usesensor)
+  {
+    Serial.println("i2c start");
+    Wire1.setPins(BME_I2C_SDA, BME_I2C_SCL);
+    bme_found = bme.begin(BME_ADDR, &Wire1);  
+    if (bme_found) 
+    {
+      // Set up oversampling and filter initialization
+#ifdef USE_BME280
+      bme.setSampling(Adafruit_BME280::MODE_NORMAL,
+                      Adafruit_BME280::SAMPLING_X2,  // temperature
+                      Adafruit_BME280::SAMPLING_X16, // pressure
+                      Adafruit_BME280::SAMPLING_X1,  // humidity
+                      Adafruit_BME280::FILTER_X16,
+                      Adafruit_BME280::STANDBY_MS_500);
+#else
+      bme.setTemperatureOversampling(BME680_OS_8X);
+      bme.setHumidityOversampling(BME680_OS_2X);
+      bme.setPressureOversampling(BME680_OS_4X);
+      bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
+      bme.setGasHeater(320, 150); // 320*C for 150 ms
+#endif
+    }
+    else  
+    {
+      Serial.println("Could not find a valid BME680/280 sensor, check wiring!");
+      Serial.print("SensorID was: 0x"); Serial.println(bme.sensorID(),16);
+      Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
+      Serial.print("        ID of 0x56-0x58 represents a BMP 280,\n");
+      Serial.print("        ID of 0x60 represents a BME 280.\n");
+      Serial.print("        ID of 0x61 represents a BME 680.\n");
+    }
+  }
+  Serial.println("photo start");  
+  // настройка фоторезистора
+  pinMode(PHOTO_PIN, ANALOG);
+  //Настройка параметров аудио
+  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+  audio.setVolume(vol);
+  Serial.println("setup  audio done"); 
+  lv_theme_default_init(NULL, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_CYAN), darktheme, &fira);   
+}
+
+//=================================================================================================
 void loop()
 {
   static int lastms = 0;
+  lv_timer_handler();
+
   ntp.tick();//внутренний таймер NTP сервиса
   audio.loop(); //аудио 
   filemgr.handleClient(); //файловый сервер
   loopWebServer(); //Web сервер
 
   //далее проверяем таймеры на срабатывание
-    
-    if (reflvgl.isReady())
-       {
-        lv_timer_handler();
-        }
-     if (refbright.isReady() && photosensor==true) 
-        {
-          int analog_value = analogRead(PHOTO_PIN); //читаем аналогове значение с фоторезистора
-          //Serial.println(analog_value);
-          bright_level = map(analog_value, 0, 1088, 255, 20); //преобразовываем его в значение яркости подсветки
-          //Serial.println(bright_level);
-          tft.setBrightness(bright_level);  //устанавливаем значение подсветки 
-        }
-    if (refsensor.isReady() && lv_tabview_get_tab_act(tabview)==0 && usesensor==true)
-    {
-  
-  if (!bme.endReading()) {
-  Serial.println(F("Failed to complete reading :("));
-  }
-  else
+  if (refbright.isReady() && photosensor==true) 
   {
-  lv_label_set_text_fmt(roomtemp,LV_SYMBOL_TEMP"%.1f°С",bme.temperature);
-  lv_label_set_text_fmt(roomhumid, LV_SYMBOL_HUMIDITY"%.1f%",bme.humidity);
-  lv_label_set_text_fmt(roompress,LV_SYMBOL_PRESSURE"%dмм рт. ст.",bme.pressure/133,3);
-  int airquality=bme.gas_resistance / 1000;
-  if (airquality<51) {lv_label_set_text_fmt(roomair,"Качество воздуха: Хорошее",airquality);}
-  if (airquality>50 && airquality<101) {lv_label_set_text_fmt(roomair,"Качество воздуха: Среднее",airquality);} 
-  if (airquality>100 && airquality<151) {lv_label_set_text_fmt(roomair,"Качество воздуха: Ниже среднего",airquality);} 
-  if (airquality>150 && airquality<201) {lv_label_set_text_fmt(roomair,"Качество воздуха: Плохое",airquality);} 
-  if (airquality>200 && airquality<301) {lv_label_set_text_fmt(roomair,"Качество воздуха: Очень плохое",airquality);} 
-  if (airquality>300) {lv_label_set_text_fmt(roomair,"Качество воздуха: Опасное",airquality);} 
-  lv_bar_set_value(roomair_bar,airquality/10, LV_ANIM_ON);
-  lv_label_set_text_fmt(roomair_bar_label,"%d",airquality);
+    int analog_value = analogRead(PHOTO_PIN); //читаем аналогове значение с фоторезистора
+    //Serial.println(analog_value);
+    bright_level = map(analog_value, 0, 1088, 255, 20); //преобразовываем его в значение яркости подсветки
+    //Serial.println(bright_level);
+    tft.setBrightness(bright_level);  //устанавливаем значение подсветки 
   }
-    }        
-  if (WiFi.status() == WL_CONNECTED)
-{ 
-   lv_obj_clear_flag(wifistatus, LV_OBJ_FLAG_HIDDEN);
-   
-
-     if (refvisualiser.isReady())
-     {
-       lv_chart_set_value_by_id(radio_visualiser, radio_visualiser_series, lv_rand(0,33), lv_rand(20, 100));
-     }
     
-  if (reftime.isReady()) {
-        lv_label_set_text(ui_status_clock, ntp.timeString().c_str());
-        if (lv_tabview_get_tab_act(tabview)==0)
-        {
+  if (bme_found && refsensor.isReady() && lv_tabview_get_tab_act(tabview)==0 && usesensor==true)
+  {
+    float bme_temp, bme_pressure, bme_humidity;
+    int airquality;
+    bool bme_ok = true;
+#ifdef USE_BME280
+    bme_temp = bme.readTemperature();
+    bme_pressure = bme.readPressure() * 3 / 400;
+    bme_humidity = bme.readHumidity();
+    airquality = 100;
+#else
+    bme_ok = bme.endReading();
+    if (bme_ok)
+    {
+      bme_temp = bme.temperature;
+      bme_pressure = bme.pressure / 133.3F;
+      bme_humidity = bme.humidity;
+      airquality = bme.gas_resistance / 1000;
+    }
+#endif
+
+    if (bme_ok)
+    {
+      lv_label_set_text_fmt(roomtemp,LV_SYMBOL_TEMP" %.1f°С", bme_temp);
+      lv_label_set_text_fmt(roomhumid, LV_SYMBOL_HUMIDITY" %.1f %%", bme_humidity);
+      lv_label_set_text_fmt(roompress,LV_SYMBOL_PRESSURE" %.0f мм", bme_pressure);
+//      lv_label_set_text_fmt(roompress,"%.0f мм рт/ст", bme_pressure);
+      if (airquality<51) {lv_label_set_text_fmt(roomair,"Качество воздуха: Хорошее",airquality);}
+      if (airquality>50 && airquality<101) {lv_label_set_text_fmt(roomair,"Качество воздуха: Среднее",airquality);} 
+      if (airquality>100 && airquality<151) {lv_label_set_text_fmt(roomair,"Качество воздуха: Ниже среднего",airquality);} 
+      if (airquality>150 && airquality<201) {lv_label_set_text_fmt(roomair,"Качество воздуха: Плохое",airquality);} 
+      if (airquality>200 && airquality<301) {lv_label_set_text_fmt(roomair,"Качество воздуха: Очень плохое",airquality);} 
+      if (airquality>300) {lv_label_set_text_fmt(roomair,"Качество воздуха: Опасное",airquality);} 
+      lv_bar_set_value(roomair_bar,airquality/10, LV_ANIM_ON);
+      lv_label_set_text_fmt(roomair_bar_label,"%d",airquality);
+    }
+    else Serial.println(F("Failed to complete reading BME680"));
+  }        
+  
+  if (WiFi.status() == WL_CONNECTED)
+  { 
+    lv_obj_clear_flag(wifistatus, LV_OBJ_FLAG_HIDDEN);
+    if (refvisualiser.isReady())
+    {
+      lv_chart_set_value_by_id(radio_visualiser, radio_visualiser_series, lv_rand(0,33), lv_rand(20, 100));
+    }
+    
+    if (reftime.isReady()) 
+    {
+      lv_label_set_text(ui_status_clock, ntp.timeString().c_str());
+      if (lv_tabview_get_tab_act(tabview)==0)
+      {
         //обновление времени по NTP
         lv_label_set_text(displayclock, ntp.timeString().c_str());
         if (lastday!=ntp.day())
         {
           set_calendars_date();
         }      
-        }
-  }
+      }
+    }
    
-   if (refpc.isReady() and lv_tabview_get_tab_act(tabview)==1)
-   {
-        Serial.println("Reading hardware");
-        if (WiFi.status() == WL_CONNECTED) hardwareMonitor(); 
-  }
+    if (refpc.isReady() and lv_tabview_get_tab_act(tabview)==1)
+    {
+      Serial.println("Reading hardware");
+      if (WiFi.status() == WL_CONNECTED) hardwareMonitor(); 
+    }
+      
     if (refweather.isReady())
-   {
-        if (WiFi.status() == WL_CONNECTED) getweather(); 
+    {
+      if (WiFi.status() == WL_CONNECTED) getweather(); 
+    }
+  } 
+  else
+  {
+    lv_obj_add_flag(wifistatus, LV_OBJ_FLAG_HIDDEN);  
   }
-  
-} else
-{
- lv_obj_add_flag(wifistatus, LV_OBJ_FLAG_HIDDEN);  
 }
-}
+//=================================================================================================

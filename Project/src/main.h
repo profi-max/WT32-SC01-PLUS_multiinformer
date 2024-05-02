@@ -28,17 +28,23 @@ https://github.com/profi-max
   #include <WiFiClient.h>//для связи по протоколу https
   #include <HTTPClient.h>//отправка http запросов
   #include <Adafruit_Sensor.h>//универсальная библиотека для работы с различными сенсорами
-  #include <Adafruit_BME680.h>//библиотека для работы с датчиком BME680
   #include <Audio.h> //ESP32 Audio I2S от ESPHome
   #include <LovyanGFX.hpp>
   #include "sdcard.h"
-  
-
   #include <WebServer.h> //Библиотека Web сервера
   // getting access to the nice mime-type-table and getContentType()
   #include <detail/RequestHandlersImpl.h>
-
   #include <ESPxWebFlMgr.h> //файловый менеджер
+
+
+  #define USE_BME280
+  #define BME_ADDR 0x76  // адрес зависит от пина SDO (0: 0x76)(1: 0x77)
+
+#ifdef USE_BME280
+  #include <Adafruit_BME280.h>//библиотека для работы с датчиком BME280
+#else
+  #include <Adafruit_BME680.h>//библиотека для работы с датчиком BME680
+#endif
 
 //Определяем различные параметры устройств
   //Пины ESP32 подключенные к SD карте
@@ -51,7 +57,8 @@ https://github.com/profi-max
   #define I2S_BCLK      36
   #define I2S_LRC       35
 
-
+  #define BME_I2C_SDA 11
+  #define BME_I2C_SCL 12
 
   #define SCREEN_WIDTH 480
   #define SCREEN_HEIGHT 320
