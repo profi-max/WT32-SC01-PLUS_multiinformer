@@ -2559,7 +2559,6 @@ void loop()
       lv_label_set_text_fmt(roomtemp,LV_SYMBOL_TEMP" %.1f°С", bme_temp);
       lv_label_set_text_fmt(roomhumid, LV_SYMBOL_HUMIDITY" %.1f %%", bme_humidity);
       lv_label_set_text_fmt(roompress,LV_SYMBOL_PRESSURE" %.0f мм", bme_pressure);
-//      lv_label_set_text_fmt(roompress,"%.0f мм рт/ст", bme_pressure);
       if (airquality<51) {lv_label_set_text_fmt(roomair,"Качество воздуха: Хорошее",airquality);}
       if (airquality>50 && airquality<101) {lv_label_set_text_fmt(roomair,"Качество воздуха: Среднее",airquality);} 
       if (airquality>100 && airquality<151) {lv_label_set_text_fmt(roomair,"Качество воздуха: Ниже среднего",airquality);} 
